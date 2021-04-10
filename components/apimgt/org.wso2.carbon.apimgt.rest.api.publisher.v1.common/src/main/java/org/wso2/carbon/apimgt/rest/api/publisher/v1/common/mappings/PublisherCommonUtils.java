@@ -53,6 +53,7 @@ import org.wso2.carbon.apimgt.api.model.DocumentationContent;
 import org.wso2.carbon.apimgt.api.model.ResourceFile;
 import org.wso2.carbon.apimgt.api.model.SOAPToRestSequence;
 import org.wso2.carbon.apimgt.api.model.ServiceEntry;
+import org.wso2.carbon.apimgt.api.model.SubscribedAPI;
 import org.wso2.carbon.apimgt.api.model.SwaggerData;
 import org.wso2.carbon.apimgt.api.model.Tier;
 import org.wso2.carbon.apimgt.api.model.URITemplate;
@@ -295,6 +296,15 @@ public class PublisherCommonUtils {
         List<String> apiSecurity = apiDtoToUpdate.getSecurityScheme();
         //validation for tiers
         List<String> tiersFromDTO = apiDtoToUpdate.getPolicies();
+        //check whether there are subscriptions of the removed policies
+        List<SubscribedAPI> apiUsages = apiProvider.getAPIUsageByAPIId(apiIdentifier);
+        for (SubscribedAPI subscription : apiUsages) {
+            String tierName = subscription.getTier().getName();
+            if (!tiersFromDTO.contains(tierName)) {
+                throw new APIManagementException("Subscriptions are available under " + tierName + " tier. " +
+                        "Please unsubscribe before removing the tier.");
+            }
+        }
         String originalStatus = originalAPI.getStatus();
         if (apiSecurity.contains(APIConstants.DEFAULT_API_SECURITY_OAUTH2) || apiSecurity
                 .contains(APIConstants.API_SECURITY_API_KEY)) {
