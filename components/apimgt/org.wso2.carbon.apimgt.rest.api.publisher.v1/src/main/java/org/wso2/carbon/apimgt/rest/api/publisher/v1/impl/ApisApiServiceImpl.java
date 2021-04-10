@@ -3657,6 +3657,15 @@ public class ApisApiServiceImpl implements ApisApiService {
             APIStateChangeResponse stateChangeResponse = apiProvider.changeLifeCycleStatus(tenantDomain, apiId, action.toString(),
                     lcMap);
 
+            //remove the subscriptions if the api is demoted to created
+            if ("Demote to Created".equals(action)) {
+                List<SubscribedAPI> apiUsages = apiProvider.getAPIUsageByAPIId(apiIdentifier);
+                for (SubscribedAPI subscription : apiUsages) {
+                    ApiMgtDAO.getInstance().removeSubscription(subscription.getIdentifier(),
+                            subscription.getApplication().getId());
+                }
+            }
+
             //returns the current lifecycle state
             LifecycleStateDTO stateDTO = getLifecycleState(apiIdentifier, apiId); // todo try to prevent this call
 
