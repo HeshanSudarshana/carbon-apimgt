@@ -95,6 +95,16 @@ public class ServiceReferenceHolder {
         return instance;
     }
 
+    public static UserRealm getUserRealm() {
+
+        return userRealm;
+    }
+
+    public static void setUserRealm(UserRealm realm) {
+
+        userRealm = realm;
+    }
+
     public RegistryService getRegistryService() {
 
         return registryService;

@@ -179,12 +179,18 @@ public class APIManagerComponent {
             int tenantId = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantId();
             String filePath = CarbonUtils.getCarbonConfigDirPath() + File.separator + "api-manager.xml";
             configuration.load(filePath);
-            CommonConfigDeployer configDeployer = new CommonConfigDeployer();
-            bundleContext.registerService(Axis2ConfigurationContextObserver.class.getName(), configDeployer, null);
-            TenantLoadMessageSender tenantLoadMessageSender = new TenantLoadMessageSender();
-            bundleContext.registerService(Axis2ConfigurationContextObserver.class.getName(), tenantLoadMessageSender, null);
-            KeyMgtConfigDeployer keyMgtConfigDeployer = new KeyMgtConfigDeployer();
-            bundleContext.registerService(Axis2ConfigurationContextObserver.class.getName(), keyMgtConfigDeployer, null);
+            String migrateFromVersionProperty = System.getProperty(APIConstants.MIGRATE_FROM_VERSION_PROPERTY);
+            if (migrateFromVersionProperty == null) {
+                CommonConfigDeployer configDeployer = new CommonConfigDeployer();
+                bundleContext.registerService(Axis2ConfigurationContextObserver.class.getName(),
+                        configDeployer, null);
+                TenantLoadMessageSender tenantLoadMessageSender = new TenantLoadMessageSender();
+                bundleContext.registerService(Axis2ConfigurationContextObserver.class.getName(),
+                        tenantLoadMessageSender, null);
+                KeyMgtConfigDeployer keyMgtConfigDeployer = new KeyMgtConfigDeployer();
+                bundleContext.registerService(Axis2ConfigurationContextObserver.class.getName(),
+                        keyMgtConfigDeployer, null);
+            }
 
             //Registering Notifiers
             bundleContext.registerService(Notifier.class.getName(), new SubscriptionsNotifier(), null);
@@ -203,13 +209,15 @@ public class APIManagerComponent {
             APIMgtDBUtil.initialize();
             APIMConfigService apimConfigService = new APIMConfigServiceImpl();
             bundleContext.registerService(APIMConfigService.class.getName(), apimConfigService, null);
-            APIUtil.loadAndSyncTenantConf(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
-            APIUtil.loadTenantExternalStoreConfig(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
-            APIUtil.loadTenantGAConfig(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
-            APIUtil.loadTenantWorkFlowExtensions(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
-            // load self sigup configuration to the registry
-            APIUtil.loadTenantSelfSignUpConfigurations(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
-            APIUtil.loadCommonOperationPolicies(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+            if (migrateFromVersionProperty == null) {
+                APIUtil.loadAndSyncTenantConf(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+                APIUtil.loadTenantExternalStoreConfig(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+                APIUtil.loadTenantGAConfig(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+                APIUtil.loadTenantWorkFlowExtensions(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+                // load self signup configuration to the registry
+                APIUtil.loadTenantSelfSignUpConfigurations(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+                APIUtil.loadCommonOperationPolicies(MultitenantConstants.SUPER_TENANT_DOMAIN_NAME);
+            }
             APIManagerAnalyticsConfiguration analyticsConfiguration = APIManagerAnalyticsConfiguration.getInstance();
             analyticsConfiguration.setAPIManagerConfiguration(configuration);
             registration = componentContext.getBundleContext().registerService(APIManagerConfigurationService.class.getName(), configurationService, null);
@@ -234,9 +242,11 @@ public class APIManagerComponent {
             AuthorizationUtils.addAuthorizeRoleListener(APIConstants.AM_CREATOR_LIFECYCLE_EXECUTION_ID, RegistryUtils.getAbsolutePath(RegistryContext.getBaseInstance(), APIUtil.getMountedPath(RegistryContext.getBaseInstance(), RegistryConstants.GOVERNANCE_REGISTRY_BASE_PATH) + APIConstants.API_LIFE_CYCLE_HISTORY), APIConstants.Permissions.API_CREATE, UserMgtConstants.EXECUTE_ACTION, null);
             AuthorizationUtils.addAuthorizeRoleListener(APIConstants.AM_PUBLISHER_LIFECYCLE_EXECUTION_ID, RegistryUtils.getAbsolutePath(RegistryContext.getBaseInstance(), APIUtil.getMountedPath(RegistryContext.getBaseInstance(), RegistryConstants.GOVERNANCE_REGISTRY_BASE_PATH) + APIConstants.API_LIFE_CYCLE_HISTORY), APIConstants.Permissions.API_PUBLISH, UserMgtConstants.EXECUTE_ACTION, null);
             setupImagePermissions();
-            GatewayArtifactsMgtDBUtil.initialize();
-            configureEventPublisherProperties();
-            configureNotificationEventPublisher();
+            if (migrateFromVersionProperty == null) {
+                GatewayArtifactsMgtDBUtil.initialize();
+                configureEventPublisherProperties();
+                configureNotificationEventPublisher();
+            }
             // Load initially available api contexts at the server startup. This Cache is only use by the products other than the api-manager
             /* TODO: Load Config values from apimgt.core*/
             boolean apiManagementEnabled = APIUtil.isAPIManagementEnabled();
@@ -248,13 +258,15 @@ public class APIManagerComponent {
                     contextCache.put(context, Boolean.TRUE);
                 }
             }
-            try {
-                APIUtil.createDefaultRoles(MultitenantConstants.SUPER_TENANT_ID);
-            } catch (APIManagementException e) {
-                log.error("Failed create default roles for tenant " + MultitenantConstants.SUPER_TENANT_ID, e);
-            } catch (Exception e) {
-                // The generic Exception is handled explicitly so execution does not stop during config deployment
-                log.error("Exception when creating default roles for tenant " + MultitenantConstants.SUPER_TENANT_ID, e);
+            if (migrateFromVersionProperty == null) {
+                try {
+                    APIUtil.createDefaultRoles(MultitenantConstants.SUPER_TENANT_ID);
+                } catch (APIManagementException e) {
+                    log.error("Failed create default roles for tenant " + MultitenantConstants.SUPER_TENANT_ID, e);
+                } catch (Exception e) {
+                    // The generic Exception is handled explicitly so execution does not stop during config deployment
+                    log.error("Exception when creating default roles for tenant " + MultitenantConstants.SUPER_TENANT_ID, e);
+                }
             }
             // Adding default throttle policies
             addDefaultAdvancedThrottlePolicies();

@@ -58,15 +58,19 @@ public class JMSListenerStartupShutdownListener implements ServerStartupObserver
 
     @Override
     public void completedServerStartup() {
-
-        APIManagerConfiguration apimConfiguration = ServiceReferenceHolder.getInstance().getAPIMConfiguration();
-        if (apimConfiguration != null) {
-            String enableKeyManagerRetrieval =
-                    apimConfiguration.getFirstProperty(APIConstants.ENABLE_KEY_MANAGER_RETRIVAL);
-            if (JavaUtils.isTrueExplicitly(enableKeyManagerRetrieval)) {
-                jmsTransportHandlerForEventHub
-                        .subscribeForJmsEvents(JMSConstants.TOPIC_KEY_MANAGER, new KeyManagerJMSMessageListener());
+        String migrateFromVersionProperty = System.getProperty(APIConstants.MIGRATE_FROM_VERSION_PROPERTY);
+        if (migrateFromVersionProperty == null) {
+            APIManagerConfiguration apimConfiguration = ServiceReferenceHolder.getInstance().getAPIMConfiguration();
+            if (apimConfiguration != null) {
+                String enableKeyManagerRetrieval =
+                        apimConfiguration.getFirstProperty(APIConstants.ENABLE_KEY_MANAGER_RETRIVAL);
+                if (JavaUtils.isTrueExplicitly(enableKeyManagerRetrieval)) {
+                    jmsTransportHandlerForEventHub
+                            .subscribeForJmsEvents(JMSConstants.TOPIC_KEY_MANAGER, new KeyManagerJMSMessageListener());
+                }
             }
+        } else {
+            log.info("Stopped at JMSListenerStartupShutdownListener completed!");
         }
     }
 
