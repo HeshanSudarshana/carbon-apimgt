@@ -32,6 +32,8 @@ import io.netty.handler.codec.http.websocketx.WebSocketCloseStatus;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
+import org.apache.axis2.context.ConfigurationContext;
+import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.http.HttpHeaders;
 import org.junit.Assert;
 import org.junit.Before;
@@ -49,8 +51,10 @@ import org.wso2.carbon.apimgt.gateway.inbound.InboundMessageContextDataHolder;
 import org.wso2.carbon.apimgt.gateway.inbound.websocket.InboundProcessorResponseDTO;
 import org.wso2.carbon.apimgt.gateway.inbound.websocket.InboundWebSocketProcessor;
 import org.wso2.carbon.apimgt.gateway.inbound.websocket.utils.InboundWebsocketProcessorUtil;
+import org.wso2.carbon.apimgt.gateway.internal.ServiceReferenceHolder;
 import org.wso2.carbon.apimgt.gateway.utils.APIMgtGoogleAnalyticsUtils;
 import org.wso2.carbon.apimgt.impl.APIConstants;
+import org.wso2.carbon.apimgt.impl.APIManagerConfiguration;
 import org.wso2.carbon.apimgt.impl.dto.APIKeyValidationInfoDTO;
 import org.wso2.carbon.apimgt.impl.utils.APIUtil;
 import org.wso2.carbon.apimgt.keymgt.model.entity.API;
@@ -81,6 +85,7 @@ public class WebsocketInboundHandlerTestCase {
     private InboundWebSocketProcessor inboundWebSocketProcessor;
     private WebsocketInboundHandler websocketInboundHandler;
     private org.wso2.carbon.apimgt.keymgt.model.entity.API websocketAPI;
+    private ServiceReferenceHolder serviceReferenceHolder;
 
     @Before
     public void setup() throws Exception {
@@ -153,6 +158,12 @@ public class WebsocketInboundHandlerTestCase {
                 "ws://localhost:8080/graphql");
         fullHttpRequest.headers().set(headerName, headerValue);
         fullHttpRequest.headers().set(HttpHeaders.UPGRADE, strWebSocket);
+        serviceReferenceHolder = Mockito.mock(ServiceReferenceHolder.class);
+        APIManagerConfiguration apiManagerConfiguration = Mockito.mock(APIManagerConfiguration.class);
+        ConfigurationContext configurationContext = Mockito.mock(ConfigurationContext.class);
+        PowerMockito.when(ServiceReferenceHolder.getInstance()).thenReturn(serviceReferenceHolder);
+        Mockito.when(serviceReferenceHolder.getAPIManagerConfiguration()).thenReturn(apiManagerConfiguration);
+        Mockito.when(serviceReferenceHolder.getServerConfigurationContext()).thenReturn(configurationContext);
         Mockito.when(inboundWebSocketProcessor.handleHandshake(fullHttpRequest, channelHandlerContext,
                 inboundMessageContext)).thenReturn(responseDTO);
         websocketInboundHandler.channelRead(channelHandlerContext, fullHttpRequest);
